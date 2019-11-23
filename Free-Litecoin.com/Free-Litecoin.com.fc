@@ -1,11 +1,9 @@
-
-//=============================================//
-//AviramDayan - Withdraw+Faucet (edit) 03/10/2019
-//=============================================//
-
 using System;
 using FaucetCollector.Script;
-
+using OpenQA.Selenium;
+using OpenQA.Selenium.Interactions;
+//css_ref HumanActions.dll;
+using HumanActions;
 public class freeLitecoinScript : FaucetScript
 {
     public override FaucetSettings Settings
@@ -15,7 +13,7 @@ public class freeLitecoinScript : FaucetScript
             return new FaucetSettings("https://www.free-litecoin.com/")
             {
                 new FaucetSetting() { Name = "Email", Display = "Email Address", Type = EditorType.TextBox, Required = true },
-                new FaucetSetting() { Name = "ps", Display = "password", Type = EditorType.Wallet, Required = true },
+                new FaucetSetting() { Name = "Pass", Display = "password", Type = EditorType.Password, Required = true },
                 new FaucetSetting() { Name = "LimitWithdraw", Display = "LimitWithdraw ", Type = EditorType.Numeric, Default = 100 },
             };
         }
@@ -34,7 +32,7 @@ public class freeLitecoinScript : FaucetScript
     public override bool IsLoggedIn()
     {
 
-        return IsVisible(ElementByXPath("//a[contains(@href,'logout.php')]"));
+        return ElementByXPath("//a[contains(@href,'logout.php')]")!=null;
     }
 
     public override int BeforeLogin()
@@ -46,11 +44,11 @@ public class freeLitecoinScript : FaucetScript
 
     public override int DoLogin()
     {
-
+		 DriverHumanActions humanActions=new DriverHumanActions(Driver);
         var signInUser = ElementById("usr");
         if (!IsVisible(signInUser))
         {
-
+            Driver.Manage ( ).Cookies.DeleteAllCookies ( );
             return Fail("Email input not found.");
         }
 
@@ -61,18 +59,18 @@ public class freeLitecoinScript : FaucetScript
             return Fail("Password input not found.");
         }
 
-        SetText(signInUser, GetSetting("Email"));
-        Wait();
-        SetText(signInPassword, GetSetting("ps"));
+        humanActions.SetText(signInUser, GetSetting("Email"));
+        Wait(1);
+        humanActions.SetText(signInPassword, GetPassword("Pass"));
 
-        var loginButton = ElementByXPath("//button[contains(@class, 'btn-succes')]");
+        var loginButton = ElementByXPath("//button[@class='btn btn-primary btn-lg']");
         if (!IsVisible(loginButton))
         {
  
             return Fail("Login button not found.");
         }
 
-        Wait();
+        Wait(1);
 
         //Solve the captcha
         var result = SolveCaptcha();
@@ -82,15 +80,25 @@ public class freeLitecoinScript : FaucetScript
             return result;
         }
 
-        Wait(3);
+       Wait(1);
 
 
-        Click(loginButton);
+        humanActions.Click(loginButton);
 
 
         return base.DoLogin();
     }
 
+	public void HumanClick ( IWebElement element )
+    {
+        Actions actions =new Actions(Driver);
+
+        actions.MoveToElement ( element , element.Size.Width/2 , element.Size.Height/2 ).Build ( ).Perform ( );
+        Wait (1 );
+        actions.Click ( ).Build ( ).Perform ( );
+
+    }
+	
     public override int AfterLogin()
     {
 		var body = ElementByXPath("//body");
@@ -133,6 +141,11 @@ public class freeLitecoinScript : FaucetScript
     public override int DoSolveCaptcha()
     {
 
+	    if ( ElementByXPath ( "//div[contains(@class,'g-recaptcha')]" )==null )
+        {
+            return 0;
+        }
+		
         return base.DoSolveCaptcha();
     }
 
