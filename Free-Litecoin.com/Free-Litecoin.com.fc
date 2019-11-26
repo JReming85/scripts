@@ -16,7 +16,6 @@ public class freeLitecoinScript : FaucetScript
                 new FaucetSetting() { Name = "Email", Display = "Email Address", Type = EditorType.TextBox, Required = true },
                 new FaucetSetting() { Name = "Pass", Display = "password", Type = EditorType.Password, Required = true },
 				new FaucetSetting(){Name="AutoWithdraw",Display="AutoWithdraw",Type=EditorType.CheckBox,Default=true},
-				new FaucetSetting(){Name="WithdrawAmt",Display="Withdraw Threshold (> Minimum Withdraw + Fees)",Type=EditorType.TextBox,Required=false,Default="0.01"},
             };
         }
     }
@@ -178,12 +177,20 @@ public class freeLitecoinScript : FaucetScript
 			}
 		
 			bool SuccessWithdraw = false;
-			var total = GetSetting("WithdrawAmt");
-			float total1;
-			float.TryParse(total, out total1);
-			Log("total " + total1);
-			Log("balance" + Balance);
-			if(Balance > total1)
+			float total;
+			
+			var tmp90 = ElementByXPath("//h4[contains(.,'Minimum value to withdraw:')]");
+			var tmp91 = ElementByXPath("//h4[contains(.,'Network fee:')]");
+			tmp90 = tmp90.Replace("Minimum value to withdraw: ", "");
+			tmp91 = tmp91.Replace("Network fee: ", "");
+			float min;
+			float fee;
+			float.TryParse(tmp90, out min);
+			float.TryParse(tmp90, out fee);
+			
+			total = min + fee;
+			
+			if(Balance > total)
 			{
 				GoToUrl("https://www.free-litecoin.com/withdraw/");
 				Wait();
@@ -228,10 +235,7 @@ public class freeLitecoinScript : FaucetScript
 //DoSolveFaucet//
 //============//
     public override int DoSolveFaucet()
-    {
-		
-
-	
+    {	
         //faucet
 
         GoToUrl("https://www.free-litecoin.com");
@@ -257,8 +261,6 @@ public class freeLitecoinScript : FaucetScript
 //============//
 //DoSolveFaucet//
 //============//
-
-
 
 
     public override int AfterSolveFaucet()
