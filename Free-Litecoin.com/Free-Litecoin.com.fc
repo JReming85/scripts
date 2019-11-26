@@ -179,8 +179,10 @@ public class freeLitecoinScript : FaucetScript
 			bool SuccessWithdraw = false;
 			float total;
 			
-			var tmp90 = ElementByXPath("//h4[contains(.,'Minimum value to withdraw:')]");
-			var tmp91 = ElementByXPath("//h4[contains(.,'Network fee:')]");
+			var tmp80 = ElementByXPath("//h4[contains(.,'Minimum value to withdraw:')]");
+			var tmp81 = ElementByXPath("//h4[contains(.,'Network fee:')]");
+			string tmp90 = tmp80.Text;
+			string tmp91 = tmp81.Text;
 			tmp90 = tmp90.Replace("Minimum value to withdraw: ", "");
 			tmp91 = tmp91.Replace("Network fee: ", "");
 			float min;
