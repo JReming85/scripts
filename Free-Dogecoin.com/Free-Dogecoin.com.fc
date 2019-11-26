@@ -21,8 +21,6 @@ public class FreeDocoinScript : FaucetScript
                 new FaucetSetting(){Name="User",Display="Email",Type=EditorType.TextBox,Required=true},
                 new FaucetSetting(){Name="Pass",Display="Password",Type=EditorType.Password,Required=true},
                 new FaucetSetting(){Name="AutoWithdraw",Display="AutoWithdraw",Type=EditorType.CheckBox,Default=true},
-				new FaucetSetting(){Name="WithdrawAmt",Display="Withdraw Threshold (> Minimum Withdraw + Fees)",Type=EditorType.Numeric,Required=false,Default=70},
-                
               
                 //insert user settings here
                 //new FaucetSetting { 
@@ -229,9 +227,21 @@ public class FreeDocoinScript : FaucetScript
 
             }
             bool SuccessWithdraw = false;
-			var total = GetIntSetting("WithdrawAmt");
-            if(Balance > total)
 			
+			var tmp90 = ElementByXPath("//h4[contains(.,'Minimum value to withdraw:')]");
+			var tmp91 = ElementByXPath("//h4[contains(.,'Network fee:')]");
+			tmp90 = tmp90.Replace("Minimum value to withdraw: ", "");
+			tmp91 = tmp91.Replace("Network fee: ", "");
+			tmp90 = tmp90.Replace(" Ð", "");
+			tmp91 = tmp91.Replace(" Ð", "");
+			float min;
+			float fee;
+			float.TryParse(tmp90, out min);
+			float.TryParse(tmp90, out fee);
+			
+			float total;
+			total = min + fee;
+            if(Balance > total)			
             {
                 
                 GoToUrl("https://www.free-dogecoin.com/withdraw/");
