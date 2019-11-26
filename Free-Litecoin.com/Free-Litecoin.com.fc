@@ -14,9 +14,7 @@ public class freeLitecoinScript : FaucetScript
             {
                 new FaucetSetting() { Name = "Email", Display = "Email Address", Type = EditorType.TextBox, Required = true },
                 new FaucetSetting() { Name = "Pass", Display = "password", Type = EditorType.Password, Required = true },
-                #new FaucetSetting() { Name = "LimitWithdraw", Display = "LimitWithdraw ", Type = EditorType.Numeric, Default = 100 },
-		new FaucetSetting(){Name="AutoWithdraw",Display="AutoWithdraw",Type=EditorType.CheckBox,Default=true},
-		new FaucetSetting(){Name="WithdrawAmt",Display="Withdraw Threshold (> Minimum Withdraw + Fees)",Type=EditorType.TextBox,Required=false,Default="0.01"},
+                new FaucetSetting() { Name = "LimitWithdraw", Display = "LimitWithdraw ", Type = EditorType.Numeric, Default = 100 },
             };
         }
     }
@@ -162,56 +160,7 @@ public class freeLitecoinScript : FaucetScript
 
     public override int BeforeSolveFaucet()
     {
-	//Withdraw
-	if(GetBoolSetting("AutoWithdraw"))
-	{
-		float Balance = 0;
-		var CryptoValue = ElementByXPath("//a[@id='money']");
-		if (IsVisible(CryptoValue))
-		{
-			string ValueDecimal = CryptoValue.Text;
-			float decimals;
-			if(float.TryParse(ValueDecimal,NumberStyles.Any,CultureInfo.InvariantCulture, out decimals))
-			{
-				Balance = decimals;
-			}
-		}
-	}
-	bool SuccessWithdraw = false;
-	var total = GetIntSetting("WithdrawAmt");
-	if(Balance > total)
-	{
-		GoToUrl("https://www.free-litecoin.com/withdraw/");
-		Wait();
-		var PasteALL = ElementByXPath("//button[contains(text(),'Paste all funds')]");
-		if (!IsVisible(ButtonClaim))
-		{
-			Click(PasteALL);
-		}
-		Wait();
-		var WithdrawButton = ElementByXPath("//button[@id='buttonwithdraw']");
-		if (IsVisible(WithdrawButton))
-		{
-			var result = DoSolveCaptcha();
-			if (result > 0)
-			{
-				return base.BeforeSolveFaucet();
-			}
-			Click(WithdrawButton);
-			Wait();
-		}
-		var WithdrawResult = ElementByXPath("//h2[@id='withdrawresult']");
-		if (IsVisible(WithdrawResult))
-		{
-			SuccessWithdraw = true;
-			string WithdrawResultText = WithdrawResult.Text;
-			Log(WithdrawResultText);
-			if (WithdrawResultText.Contains("Your address is not valid"))
-			{
-				Log("You need to set your wallet correctly");
-				SetSetting("AutoWithdraw", false);
-			}
-		}
+	
 
         return base.BeforeSolveFaucet();
     }
@@ -224,8 +173,43 @@ public class freeLitecoinScript : FaucetScript
     public override int DoSolveFaucet()
     {
 		
+        //Withdraw
 
-	
+        var balanceVAR = ElementByXPath("//a[@id='money']");
+        string BalanceSTRING = balanceVAR.Text.Trim().Split('.')[1];
+        int BalanceINT = Convert.ToInt32(BalanceSTRING);
+
+        int MyAmount;
+        Int32.TryParse(GetSetting("LimitWithdraw"), out MyAmount);
+
+        if (BalanceINT < MyAmount) // - 100
+        {
+            Log("LimitWithdraw - Under <");
+        }
+
+        if (BalanceINT > MyAmount && MyAmount != 0)
+        {
+            Log("LimitWithdraw - Above >");
+            GoToUrl("https://www.free-litecoin.com/withdraw"); 
+            Wait();
+            Wait(2);
+            SetSetting("MyBalance", balanceVAR.Text); //Store
+            var InputWallet = ElementByXPath("//input[@id='moneywithdraw']");
+            SetText(InputWallet, GetSetting("MyBalance")); //set stored text
+
+            var result_1 = DoSolveCaptcha();
+            if (result_1 > 0)
+            {
+               return Fail("fail not solve"); //if something wrong
+            }
+            
+            var ButtonWithdraw = ElementByXPath("//button[@id='buttonwithdraw']");
+            Click(ButtonWithdraw);
+            Wait();
+            Wait(4);
+        }
+
+
         //faucet
 
         GoToUrl("https://www.free-litecoin.com");
