@@ -20,7 +20,6 @@ public class FreeDocoinScript : FaucetScript
             {
                 new FaucetSetting(){Name="User",Display="Email",Type=EditorType.TextBox,Required=true},
                 new FaucetSetting(){Name="Pass",Display="Password",Type=EditorType.Password,Required=true},
-                new FaucetSetting(){Name="AutoWithdraw",Display="AutoWithdraw",Type=EditorType.CheckBox,Default=true},
                 
               
                 //insert user settings here
@@ -210,67 +209,6 @@ public class FreeDocoinScript : FaucetScript
     /// </summary>
     public override int BeforeSolveFaucet()
     {
-        
-        if(GetBoolSetting("AutoWithdraw"))
-        {
-            float Balance = 0;
-            var CryptoValue = ElementByXPath("//a[@id='cryptovalue']");
-            if (IsVisible(CryptoValue))
-            {
-
-                string ValueDecimal = CryptoValue.Text;
-
-                float decimals;
-                if(float.TryParse(ValueDecimal,NumberStyles.Any,CultureInfo.InvariantCulture, out decimals))
-                {
-                    Balance = decimals;
-                }
-
-            }
-            bool SuccessWithdraw = false;
-            if(Balance>37.5)
-            {
-                
-                GoToUrl("https://www.free-dogecoin.com/withdraw/");
-                Wait();
-                var BalanceBox = ElementByXPath("//input[@id='cryptowithdraw']");
-                if (IsVisible(BalanceBox))
-                {
-                    SetText(BalanceBox, (Balance-2).ToString());
-                }
-                Wait();
-                var WithdrawButton = ElementByXPath("//button[@id='withdrawbutton']");
-                if (IsVisible(WithdrawButton))
-                {
-                    var result = DoSolveCaptcha();
-                    if (result > 0)
-                    {
-                        return base.BeforeSolveFaucet();
-                    }
-                    Click(WithdrawButton);
-                    Wait();
-                }
-                var WithdrawResult = ElementByXPath("//h2[@id='withdrawresult']");
-                if (IsVisible(WithdrawResult))
-                {
-                    SuccessWithdraw = true;
-                    string WithdrawResultText = WithdrawResult.Text;
-                    Log(WithdrawResultText);
-                    if (WithdrawResultText.Contains("Your address is not valid"))
-                    {
-                        Log("You need to set your wallet correctly");
-                        SetSetting("AutoWithdraw", false);
-
-                    }
-         
-                }
-
-            }
-            if (!SuccessWithdraw)
-            {
-                Log("Your balance is " + Balance.ToString());
-            }
-        }
         //This faucet has nothing to do here. We will let Faucet Collector handle it.
         return base.BeforeSolveFaucet();
     }

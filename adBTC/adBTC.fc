@@ -11,6 +11,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 //css_ref DoubleMathCaptchaUtility.dll
+//css_inc RecaptchaUtilities
 namespace Adbtc
 {
     public class TemplateScript : FaucetScript
@@ -68,6 +69,8 @@ namespace Adbtc
                 GoToUrl("https://adbtc.top/");
                 Wait();
             }
+          
+            CheckCloudFlare ( );
 
             var GotoLogin = ElementByXPath("//a[@class='btn-large lime accent-2 black-text']");
             if (!IsVisible(GotoLogin))
@@ -79,7 +82,24 @@ namespace Adbtc
 
             return base.BeforeLogin();
         }
+          
+        private void CheckCloudFlare ( )
+         {
+            if(IsVisible(ElementByXPath( "//h1[@data-translate='challenge_headline']" ) ))
+            {
 
+                var result=DoSolveCaptcha();
+                if ( result>0 )
+                {
+                    return;
+                }
+
+                RecaptchaUtility recaptchaUtility=new RecaptchaUtility(this);
+                recaptchaUtility.DoSolve ( );
+                Wait ( 1 );
+
+            }
+        }
         public override int DoLogin()
         {
 
@@ -104,10 +124,10 @@ namespace Adbtc
             SetText(PasswordBox, GetPassword("Pass"));
             Wait(1);
 
-            var ButtonLogin = ElementByXPath("//input[@id='submit_btn']");
+            var ButtonLogin = ElementByXPath("//input[@class='btn-large light-blue darken-4']");
             if (!IsVisible(ButtonLogin))
             {
-                return Fail("Fail, button login is not vibisible");
+                return Fail("Fail, button login is not visible");
             }
             Click(ButtonLogin);
 
@@ -475,17 +495,27 @@ namespace Adbtc
             return GetWaitSetting();
 
         }
+
+        private bool UseMath
+        {
+            get
+            {
+                return GetBoolSetting ( "UseMath" );
+            }
+        }
         public override int DoSolveCaptcha()
         {
-            var SwitchCaptcha = ElementByXPath("//input[@class='select-dropdown']");
-            if (IsVisible(SwitchCaptcha))
+            bool UseMath=this.UseMath;
+            bool NeedChange= !(IsVisible ( ElementByXPath ( "//img[contains(@src,'adbtc.top/1captcha')]" ) )==UseMath);
+
+            var SwitchCaptcha = NeedChange?ElementByXPath("//input[contains(@class,'select-dropdown')]"):null;
+            if (IsVisible(SwitchCaptcha) )
             {
+                string ActualCaptchaValue=SwitchCaptcha.GetAttribute("value");
                 Click(SwitchCaptcha);
                 Wait(1);
-                var SelectCaptcha = GetBoolSetting("UseMath") ?
-                    ElementByXPath("//ul[contains(@id,'select-options')]//span[not(contains(text(),'reCaptcha'))]")
-                    : ElementByXPath("//span[contains(text(),'reCaptcha')]");
 
+                var SelectCaptcha=ElementByXPath("//ul[contains(@id,'select-options')//span[not(contains(text(),'"+ActualCaptchaValue+"'))]");          
                 if (SelectCaptcha != null)
                 {
                     Click(SelectCaptcha);
@@ -506,15 +536,11 @@ namespace Adbtc
              var capt = ElementsByXPath("//img[contains(@src,'/icons/')]");
 
                 Wait();
-                Bitmap[] icons = new Bitmap[4];
+                Bitmap[] icons = new Bitmap[capt.Count];
 
-                for (int i = 0; i < 4; i++)
+                for (int i = 0; i < capt.Count; i++)
                 {
-                    icons[i] = TakeScreenshot(Base.Captcha.CaptchaService.Manual, capt[i]);
-                    if (icons[i].Width != 48 || icons[i].Height != 48)
-                    {
-                        icons[i] = ResizeImage(icons[i], new Size(48, 48), false);
-                    }
+                    icons[i] = TakeScreenshot(Base.Captcha.CaptchaService.Manual, capt[i]);               
 
                 }
                 Wait();
@@ -529,8 +555,6 @@ namespace Adbtc
                         {
                             result = i;
                         }
-
-
                     }
 
                 }
