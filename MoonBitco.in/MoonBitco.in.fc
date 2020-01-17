@@ -19,9 +19,12 @@ public class MoonBitcoinScript : FaucetScript
                 //We have a setting to get the email address used for the coinpot account
                 new FaucetSetting() { Name = "Email", Display = "Coinpot email addres", Type = EditorType.TextBox, Required = true },
                 //Option to use SolveMedia or reCAPTCHA
-                   new FaucetSetting(){Name="SwitchC",Display="SwitchCaptcha is the other is not visible",Type=EditorType.CheckBox,Default=true},
-
-                new FaucetSetting() { Name = "UseSolveMedia", Display = "Use SolveMedia", Type = EditorType.CheckBox, Default = true }
+                new FaucetSetting(){ Name="SwitchC",Display="SwitchCaptcha is the other is not visible",Type=EditorType.CheckBox,Default=true},
+		new FaucetSetting() { Name = "UseSolveMedia", Display = "Use SolveMedia", Type = EditorType.CheckBox, Default = true },
+                new FaucetSetting() { Name="useref",Display="Use Referral (1st Run ONLY)",Type=EditorType.CheckBox,Default=false},
+		new FaucetSetting() { Name = "refcode", Display = "Referal Code", Type = EditorType.TextBox, Required = false },
+		
+		
             };
         }
     }
@@ -96,6 +99,11 @@ public class MoonBitcoinScript : FaucetScript
     /// </summary>
     public override int DoLogin()
     {
+    	if (GetBoolSetting("useref"))
+		{
+			GoToUrl("http://moonbit.co.in/?ref=" + GetSetting("refcode"));
+			SetSetting("useref", false);
+	}
         //Find the input field that holds the email address
         var signInEmail = ElementByClass("payment-address");
         if (!IsVisible(signInEmail))
